@@ -8,13 +8,19 @@
 import UIKit
 import CoreData
 class ListViewController: UIViewController, UITableViewDelegate,UITableViewDataSource{
-  
+    
     @IBOutlet weak var tableView: UITableView!
     var titleArray = [String]()
     var idArray = [UUID]()
+    
+    var chosenTitle = ""
+    var chosenID : UUID?
+    
+    
+    
     override func viewDidLoad() {
         super.viewDidLoad()
-
+        
         navigationController?.navigationBar.topItem?.rightBarButtonItem = UIBarButtonItem(barButtonSystemItem: UIBarButtonItem.SystemItem.add, target: self, action: #selector(addButtonClicked))
         
         
@@ -53,6 +59,7 @@ class ListViewController: UIViewController, UITableViewDelegate,UITableViewDataS
     }
     
     @objc func addButtonClicked() {
+        chosenTitle = ""
         performSegue(withIdentifier: "toViewController", sender: nil)
     }
     
@@ -60,11 +67,24 @@ class ListViewController: UIViewController, UITableViewDelegate,UITableViewDataS
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         return titleArray.count
     }
-   
+    
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = UITableViewCell()
         cell.textLabel?.text = titleArray[indexPath.row]
         return cell
     }
-
+    
+    func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+        chosenTitle = titleArray[indexPath.row]
+        chosenID = idArray[indexPath.row]
+        
+        performSegue(withIdentifier: "toViewController", sender: nil)
+    }
+    override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
+        if segue.identifier ==   "toViewController" {
+            let destinationVC = segue.destination as! ViewController
+            destinationVC.selectedTitle = chosenTitle
+            destinationVC.selectedID = chosenID
+        }
+    }
 }
