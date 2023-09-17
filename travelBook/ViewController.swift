@@ -80,9 +80,15 @@ class ViewController: UIViewController, MKMapViewDelegate, CLLocationManagerDele
                                             let coordinate = CLLocationCoordinate2D(latitude: annaotationLatitude, longitude: annaotationLongitude)
                                             annotation.coordinate = coordinate
                                             mapView.addAnnotation(annotation)
-                                            
                                             nameText.text = annaotationTitle
                                             commentText.text = annaotationSubTitle
+                                            
+                                            locationManager.stopUpdatingLocation()
+                                            
+                                            
+                                            let span = MKCoordinateSpan(latitudeDelta: 0.05, longitudeDelta: 0.005)
+                                            let region = MKCoordinateRegion(center: coordinate, span: span)
+                                            mapView.setRegion(region, animated: true)
                                             
                                         }
                                     }
@@ -118,12 +124,65 @@ class ViewController: UIViewController, MKMapViewDelegate, CLLocationManagerDele
     }
     
     func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
-        let  locations = CLLocationCoordinate2D(latitude:  locations[0].coordinate.latitude, longitude: locations[0].coordinate.longitude)
-        let span = MKCoordinateSpan(latitudeDelta: 0.05, longitudeDelta: 0.05)
-        let region = MKCoordinateRegion(center: locations, span: span)
-        mapView.setRegion(region, animated: true)
+        if selectedTitle == "" {
+            
+            
+            let  locations = CLLocationCoordinate2D(latitude:  locations[0].coordinate.latitude, longitude: locations[0].coordinate.longitude)
+            let span = MKCoordinateSpan(latitudeDelta: 0.05, longitudeDelta: 0.05)
+            let region = MKCoordinateRegion(center: locations, span: span)
+            mapView.setRegion(region, animated: true)
+        } else {
+            //
+            
+        }
     }
     
+    func mapView(_ mapView: MKMapView, viewFor annotation: MKAnnotation) -> MKAnnotationView? {
+        if annotation is MKUserLocation {
+            return nil
+        }
+        
+        
+        
+        
+        let reuseId = "myPin"
+        
+        var pinView = mapView.dequeueReusableAnnotationView(withIdentifier: reuseId) as? MKMarkerAnnotationView
+        if pinView == nil {
+            pinView = MKMarkerAnnotationView(annotation: annotation, reuseIdentifier: reuseId)
+            pinView?.canShowCallout = true
+            let button = UIButton(type: UIButton.ButtonType.detailDisclosure)
+            pinView?.rightCalloutAccessoryView = button
+            
+        }else{
+            pinView?.annotation = annotation
+        }
+        
+        
+        return pinView
+    }
+    
+    func mapView(_ mapView: MKMapView, annotationView view: MKAnnotationView, calloutAccessoryControlTapped control: UIControl) {
+        if selectedTitle != "" {
+            let requestLocation = CLLocation(latitude: annaotationLatitude, longitude: annaotationLongitude)
+            
+            CLGeocoder().reverseGeocodeLocation(requestLocation) { (placemarks, error) in
+                
+                if let placemark = placemarks{
+                    if placemark.count > 0 {
+                        
+                        let newPlacemark = MKPlacemark(placemark: placemark[0])
+                        let item = MKMapItem(placemark: newPlacemark)
+                        item.name = self.annaotationTitle
+                        let launchOptions = [MKLaunchOptionsDirectionsModeKey:MKLaunchOptionsDirectionsModeDriving]
+                        item.openInMaps(launchOptions: launchOptions)
+                        
+                    }
+                }
+                
+            }
+        }
+    }
     @IBAction func saveButton(_ sender: UIButton) {
         let appDelegate = UIApplication.shared.delegate as! AppDelegate
         let context  = appDelegate.persistentContainer.viewContext
@@ -144,8 +203,8 @@ class ViewController: UIViewController, MKMapViewDelegate, CLLocationManagerDele
         }
         
         
-        
-        
+        NotificationCenter.default.post(name: NSNotification.Name("newPlace"), object: nil)
+        navigationController?.popViewController(animated: true)
     }
     
     
